@@ -14,7 +14,7 @@ const Signin = () => {
   const inputsRef = useRef([]);
   const navigate = useNavigate();
 
-  const API_BASE_URL = "https://www.farishtey.in/api/";
+  const API_BASE_URL = "https://www.farishtey.in/api";
 
   const handleOtpChange = (e, index) => {
     const { value } = e.target;
@@ -119,9 +119,8 @@ const Signin = () => {
     <div className="relative min-h-screen w-full overflow-x-hidden">
       {/* Background */}
       <div className="fixed inset-0 -z-10" aria-hidden="true">
-        <div className="absolute inset-0 bg-[#A7C7E7]" />
+        <div className="absolute inset-0 bg-white" />
         {/* Decorative background shapes */}
-        <div className="absolute w-80 h-80 bg-gradient-to-tr from-blue-300/40 via-blue-500/20 to-cyan-200/30 rounded-full blur-3xl left-[-100px] top-[-80px]" />
         <div className="absolute w-72 h-72 bg-indigo-300/20 rounded-full blur-2xl right-[-80px] bottom-[-90px]" />
       </div>
 

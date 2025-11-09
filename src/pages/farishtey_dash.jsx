@@ -4,7 +4,7 @@ import Header from "../components/Header";
 
 const FarishteyDash = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-[#A7C7E7]">
+    <div className="flex flex-col min-h-screen bg-white">
       {/* ✅ Reuse Header */}
       <Header isHomepage={true} />
 

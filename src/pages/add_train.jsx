@@ -121,7 +121,7 @@ const AddNewTrainer = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-[#A7C7E7]">
+    <div className="relative min-h-screen w-full bg-white">
       <Header />
       
       {/* Alert Component */}

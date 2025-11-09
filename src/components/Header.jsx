@@ -106,11 +106,8 @@ function Header({ hideAuthLinks, isHomepage, showHomeOnQuestions }) {
   }
 
   return (
-    <div className="relative min-h-[150px] bg-[#A7C7E7] py-4 overflow-hidden">
+    <div className="relative min-h-[150px] bg-white py-4 overflow-hidden">
 
-      {/* Decorative background shapes */}
-      <div className="pointer-events-none absolute w-80 h-80 bg-gradient-to-tr from-blue-300/40 via-blue-500/20 to-cyan-200/30 rounded-full blur-3xl left-[-100px] top-[-80px] z-0" />
-      <div className="pointer-events-none absolute w-72 h-72 bg-indigo-300/20 rounded-full blur-2xl right-[-80px] bottom-[-90px] z-0" />
 
       {/* Content */}
       <div className="relative z-10">

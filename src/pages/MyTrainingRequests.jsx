@@ -15,7 +15,7 @@ const MyTrainingRequests = () => {
   useEffect(() => {
     const fetchMyRequests = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/sessions?email=${userEmail}`);
+        const res = await axios.get(`${API_BASE_URL}sessions?email=${userEmail}`);
         const reversed = (res.data || []).reverse();
         setRequests(reversed);
       } catch (err) {
@@ -39,7 +39,7 @@ const MyTrainingRequests = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#A7C7E7] p-6">
+    <div className="min-h-screen bg-white p-6">
       <Header />
 
       <div className="max-w-5xl mx-auto mt-12">

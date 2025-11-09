@@ -23,18 +23,37 @@ const AdminApprovalDashboard = () => {
   const [pendingInstitutes, setPendingInstitutes] = useState([]);
   const [approvalLoading, setApprovalLoading] = useState(false);
   const [userRole, setUserRole] = useState("");
+  const [userChapter, setUserChapter] = useState("");
   const [showCompletePopup, setShowCompletePopup] = useState(false);
   const [selectedSessionForComplete, setSelectedSessionForComplete] = useState(null);
   const [submitLoading, setSubmitLoading] = useState({});
   const [trainersLoading, setTrainersLoading] = useState(false);
   const [institutesLoading, setInstitutesLoading] = useState(false);
+  const [selectedChapterFilter, setSelectedChapterFilter] = useState("all");
+
+  // Chapter names list
+  const chapterNames = [
+    "Agra", "Ahmedabad", "Ajmer", "Amaravati", "Balasore", "Bengaluru", "Bhopal",
+    "Bhavnagar", "Bhubaneswar", "Chandigarh", "Chennai", "Chhatrapati Sambhajinagar",
+    "Coimbatore", "Dehradun", "Delhi", "Dindigul", "Durg", "Erode", "Goa", "Gurugram",
+    "Guwahati", "Gwalior", "Hosur", "Hubballi", "Hyderabad", "Indore", "Jaipur",
+    "Jabalpur", "Jamshedpur", "Kanpur", "Karur", "Kochi", "Kolkata", "Kota", "Kozhikode",
+    "Lucknow", "Madurai", "Mangaluru", "Mumbai", "Mysuru", "Nagaland", "Nagpur", "Nashik",
+    "Noida", "Puducherry", "Pune", "Raipur", "Rajkot", "Ranchi", "Salem", "Sikkim",
+    "Siliguri", "Sivakasi", "Surat", "Thoothukudi", "Tirupur", "Tirupati", "Trichy",
+    "Trivandrum", "Vadodara", "Varanasi", "Vellore", "Vizag"
+  ];
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
         const userData = JSON.parse(storedUser);
+        console.log("User data loaded:", userData);
+        console.log("User role:", userData.role);
+        console.log("User chapter:", userData.chapter);
         setUserRole(userData.role || "");
+        setUserChapter(userData.chapter || "");
       } catch (e) {
         console.error("Error parsing user data:", e);
       }
@@ -44,7 +63,7 @@ const AdminApprovalDashboard = () => {
   const fetchSessions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/sessions`);
+      const response = await axios.get(`${API_BASE_URL}sessions`);
       const sortedRequests = sortSessions(response.data || []);
       setRequests(sortedRequests);
     } catch (error) {
@@ -67,6 +86,46 @@ const AdminApprovalDashboard = () => {
     
     // Return in order: pending (for approval tab), then approved, then completed
     return [...pending, ...approved, ...completed];
+  };
+
+  // Filter sessions based on user role and chapter
+  const filterSessionsByChapter = (sessions) => {
+    // If user role is ROLE_DEFAULT, filter by user's chapter code in booking_id
+    if (userRole === "ROLE_DEFAULT" && userChapter) {
+      console.log("Filtering sessions for ROLE_DEFAULT user");
+      console.log("User Chapter:", userChapter);
+      console.log("Total sessions before filter:", sessions.length);
+      
+      // Get chapter code from chapter name (e.g., "Erode" -> "ERO")
+      const chapterCode = userChapter.substring(0, 3).toUpperCase();
+      console.log("Chapter Code:", chapterCode);
+      
+      const filteredSessions = sessions.filter((session) => {
+        const bookingId = session.booking_id || "";
+        console.log(`Session ${session.session_id} booking_id:`, bookingId);
+        // Check if booking_id starts with the chapter code
+        const matchesChapter = bookingId.toUpperCase().startsWith(chapterCode);
+        console.log(`Matches chapter (${chapterCode}):`, matchesChapter);
+        return matchesChapter;
+      });
+      console.log("Filtered sessions count:", filteredSessions.length);
+      return filteredSessions;
+    }
+    
+    // For admin, apply chapter filter if selected (full chapter name)
+    if (userRole === "admin" && selectedChapterFilter !== "all") {
+      console.log("Filtering sessions for admin by chapter:", selectedChapterFilter);
+      // Get chapter code from full chapter name (first 3 letters)
+      const chapterCode = selectedChapterFilter.substring(0, 3).toUpperCase();
+      return sessions.filter((session) => {
+        const bookingId = session.booking_id || "";
+        return bookingId.toUpperCase().startsWith(chapterCode);
+      });
+    }
+    
+    // For admin or other roles, return all sessions
+    console.log("Showing all sessions for admin/other roles");
+    return sessions;
   };
 
   const fetchTrainers = async () => {
@@ -171,21 +230,19 @@ const AdminApprovalDashboard = () => {
     setSelectedSessionForComplete(null);
   };
 
-  const handleSessionComplete = async (session_id) => {
-    // Update local state immediately to move session from approved to completed
-    setRequests((prev) => {
-      const updated = prev.map((req) =>
-        req.session_id === session_id 
-          ? { ...req, allotment_status: "completed" } 
-          : req
-      );
-      return sortSessions(updated);
-    });
-    
-    showSuccess("Session completed successfully with media files!");
-    
-    // Refresh data from backend to ensure consistency
-    await fetchSessions();
+  const handleSessionComplete = async () => {
+    try {
+      // Close the popup first
+      closeCompletePopup();
+      
+      showSuccess("✅ Session completed successfully with media files!");
+      
+      // Refresh data from backend to get the updated status
+      await fetchSessions();
+    } catch (error) {
+      console.error("Error refreshing sessions:", error);
+      showError("Failed to refresh session list. Please refresh the page.");
+    }
   };
 
   const completeSession = async (session_id) => {
@@ -312,15 +369,22 @@ const AdminApprovalDashboard = () => {
   };
 
   const handleTabClick = (tabName) => {
-    if (userRole === "admin" || tabName === "approval") {
+    // Admin has access to all tabs
+    if (userRole === "admin") {
       setActiveTab(tabName);
-    } else {
+    }
+    // ROLE_DEFAULT has access to all tabs except Institute Approval
+    else if (userRole === "ROLE_DEFAULT" && tabName !== "institute") {
+      setActiveTab(tabName);
+    }
+    // Block access to Institute Approval tab for ROLE_DEFAULT
+    else {
       showError("You don't have permission to access this tab");
     }
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-[#A7C7E7] font-sans">
+    <div className="relative min-h-screen w-full bg-white font-sans">
       <Alert
         isVisible={alert.isVisible}
         message={alert.message}
@@ -338,7 +402,9 @@ const AdminApprovalDashboard = () => {
 
         <div className="bg-blue rounded-xl sm:rounded-2xl shadow-xl sm:shadow-2xl p-3 sm:p-6 lg:p-8 ">
           {/* Tabs inside the white card */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4 sm:mb-6">
+          <div className={`grid gap-2 mb-4 sm:mb-6 ${
+            userRole === "ROLE_DEFAULT" ? "grid-cols-3" : "grid-cols-2 lg:grid-cols-4"
+          }`}>
             <button
               onClick={() => handleTabClick("approval")}
               className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-colors ${
@@ -350,17 +416,19 @@ const AdminApprovalDashboard = () => {
               <span className="hidden sm:inline">📝 Session Approval</span>
               <span className="sm:hidden">📝 Sessions</span>
             </button>
-            <button
-              onClick={() => handleTabClick("approved")}
-              className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-colors ${
-                activeTab === "approved"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-            >
-              <span className="hidden sm:inline">✅ Approved Session</span>
-              <span className="sm:hidden">✅ Approved</span>
-            </button>
+            {userRole === "admin" && (
+              <button
+                onClick={() => handleTabClick("approved")}
+                className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-colors ${
+                  activeTab === "approved"
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                <span className="hidden sm:inline">Approved Session</span>
+                <span className="sm:hidden">✅Approved</span>
+              </button>
+            )}
             <button
               onClick={() => handleTabClick("trainer")}
               className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-colors ${
@@ -388,17 +456,39 @@ const AdminApprovalDashboard = () => {
           {/* Session Approval */}
           {activeTab === "approval" && (
             <>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-700 mb-4 sm:mb-6">
-                Training Session Requests
-              </h2>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-700">
+                  {userRole === "ROLE_DEFAULT" ? "Training Sessions Management" : "Training Session Requests"}
+                </h2>
+                {userRole === "admin" && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-gray-700">Filter by Chapter:</label>
+                    <select
+                      value={selectedChapterFilter}
+                      onChange={(e) => setSelectedChapterFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="all">All Chapters</option>
+                      {chapterNames.map((chapter) => (
+                        <option key={chapter} value={chapter}>
+                          {chapter}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
               {loading ? (
                 <p className="text-center text-gray-500 py-8 sm:py-14">
                   ⏳ Loading sessions...
                 </p>
               ) : error ? (
                 <p className="text-center text-red-500 py-8 sm:py-14">{error}</p>
-              ) : requests.filter((req) => req.allotment_status !== "approved" && req.allotment_status !== "completed")
-                  .length === 0 ? (
+              ) : (userRole === "admin" ? 
+                filterSessionsByChapter(requests).filter((req) => req.allotment_status !== "approved" && req.allotment_status !== "completed").length === 0 :
+                filterSessionsByChapter(requests).filter((req) => req.allotment_status !== "completed" && req.allotment_status !== "approved").length === 0 && 
+                filterSessionsByChapter(requests).filter((req) => req.allotment_status === "approved" || req.allotment_status === "completed").length === 0
+              ) ? (
                 <div className="text-center py-10 sm:py-20">
                   <p className="text-lg sm:text-xl text-gray-500">
                     📭 No training requests yet!
@@ -408,7 +498,7 @@ const AdminApprovalDashboard = () => {
                 <div className="mb-6 sm:mb-12">
                   {/* Mobile Card View */}
                   <div className="block sm:hidden space-y-4">
-                    {requests
+                    {filterSessionsByChapter(requests)
                       .filter((req) => req.allotment_status !== "approved" && req.allotment_status !== "completed")
                       .map((req) => (
                         <div
@@ -524,9 +614,12 @@ const AdminApprovalDashboard = () => {
 
                           <div className="flex gap-2 pt-2">
                             {req.allotment_status === "completed" ? (
-                              <div className="flex-1 px-3 py-2 bg-blue-100 text-blue-800 text-sm text-center rounded-md font-medium">
-                                ✅ Completed
-                              </div>
+                              <button
+                                onClick={() => alert("Not Yet Issued")}
+                                className="flex-1 px-3 py-2 bg-blue-100 text-blue-800 text-sm text-center rounded-md font-medium hover:bg-blue-200 transition-colors"
+                              >
+                                📜 Certificate
+                              </button>
                             ) : req.allotment_status === "rejected" ? (
                               <div className="flex-1 px-3 py-2 bg-red-100 text-red-800 text-sm text-center rounded-md font-medium">
                                 ❌ Rejected
@@ -571,7 +664,7 @@ const AdminApprovalDashboard = () => {
                           <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Booking ID</th>
                           <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Training Date</th>
                           <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Name</th>
-                          <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Phone</th>
+                          <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold whitespace-nowrap">Phone</th>
                           <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold text-center">Participants</th>
                           <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Venue</th>
                           <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Institute</th>
@@ -580,7 +673,7 @@ const AdminApprovalDashboard = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {requests
+                        {filterSessionsByChapter(requests)
                           .filter((req) => req.allotment_status !== "approved" && req.allotment_status !== "completed")
                           .map((req, index) => (
                             <tr
@@ -599,7 +692,7 @@ const AdminApprovalDashboard = () => {
                                 {formatDate(req.requested_date)}
                               </td>
                               <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm">{req.name || "-"}</td>
-                              <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm">{req.number || "-"}</td>
+                              <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm whitespace-nowrap">{req.number || "-"}</td>
                               <td className="p-2 lg:p-3 text-center text-gray-600 text-xs lg:text-sm">
                                 {req.no_of_participants || "-"}
                               </td>
@@ -674,9 +767,12 @@ const AdminApprovalDashboard = () => {
                               <td className="p-2 lg:p-3 text-center">
                                 <div className="flex justify-center gap-1 lg:gap-2">
                                   {req.allotment_status === "completed" ? (
-                                    <span className="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium">
-                                      ✅ Completed
-                                    </span>
+                                    <button
+                                      onClick={() => alert("Not Yet Issued")}
+                                      className="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium hover:bg-blue-200 transition-colors"
+                                    >
+                                      📜 Certificate
+                                    </button>
                                   ) : req.allotment_status === "rejected" ? (
                                     <span className="px-2 lg:px-3 py-1 bg-red-100 text-red-800 text-xs rounded-md font-medium">
                                       ❌ Rejected
@@ -720,22 +816,280 @@ const AdminApprovalDashboard = () => {
                   </div>
                 </div>
               )}
+
+              {/* For ROLE_DEFAULT: Show Approved and Completed Sessions in the same tab */}
+              {userRole === "ROLE_DEFAULT" && (
+                <>
+                  {/* Divider between Pending and Approved/Completed */}
+                  {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "approved" || req.allotment_status === "completed").length > 0 && (
+                    <div className="my-8 border-t-4 border-gray-300"></div>
+                  )}
+
+                  {/* Approved & Completed Sessions Section */}
+                  {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "approved" || req.allotment_status === "completed").length > 0 && (
+                    <div>
+                      <h2 className="text-xl sm:text-2xl font-bold text-green-700 mb-4 sm:mb-6">
+                        Approved & Completed Sessions
+                      </h2>
+
+                      {/* Section Status Summary */}
+                      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "approved").length > 0 && (
+                          <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                            <h3 className="text-lg font-semibold text-green-800 mb-2 flex items-center">
+                              ✅ Ready for Completion
+                              <span className="ml-2 bg-green-200 text-green-800 text-xs px-2 py-1 rounded-full">
+                                {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "approved").length}
+                              </span>
+                            </h3>
+                            <p className="text-sm text-green-600">Approved sessions awaiting completion</p>
+                          </div>
+                        )}
+                        {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "completed").length > 0 && (
+                          <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+                            <h3 className="text-lg font-semibold text-blue-800 mb-2 flex items-center">
+                              📜 Certificate Sessions
+                              <span className="ml-2 bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "completed").length}
+                              </span>
+                            </h3>
+                            <p className="text-sm text-blue-600">Sessions with certificates issued</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Mobile Card View - Approved & Completed */}
+                      <div className="block sm:hidden space-y-4">
+                        {filterSessionsByChapter(requests)
+                          .filter((req) => req.allotment_status === "approved" || req.allotment_status === "completed")
+                          .sort((a, b) => {
+                            // Approved sessions first, then completed sessions
+                            if (a.allotment_status === "approved" && b.allotment_status === "completed") return -1;
+                            if (a.allotment_status === "completed" && b.allotment_status === "approved") return 1;
+                            // Within same status, sort by date (newest first)
+                            if (a.allotment_status === b.allotment_status) {
+                              return new Date(b.requested_date) - new Date(a.requested_date);
+                            }
+                            return 0;
+                          })
+                          .map((req) => (
+                            <div
+                              key={req.session_id}
+                              className={`rounded-lg p-4 space-y-3 ${
+                                req.allotment_status === "approved" 
+                                  ? "bg-green-50 border-2 border-green-400 shadow-lg" 
+                                  : "bg-blue-50 border-2 border-blue-300 shadow-md"
+                              }`}
+                            >
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="font-semibold text-gray-800">
+                                    {req.booking_id || `BK-${req.session_id?.slice(-6)}`}
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    {formatDate(req.requested_date)}
+                                  </p>
+                                </div>
+                                <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                                  req.allotment_status === "completed" 
+                                    ? "bg-blue-100 text-blue-800 border border-blue-300" 
+                                    : "bg-green-100 text-green-800 border border-green-300"
+                                }`}>
+                                  {req.allotment_status === "completed" ? "Certificate" : "Approved"}
+                                </span>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                  <span className="text-gray-500">Name:</span>
+                                  <p className="font-medium">{req.name || "-"}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Phone:</span>
+                                  <p className="font-medium">{req.number || "-"}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Participants:</span>
+                                  <p className="font-medium">{req.no_of_participants || "-"}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Venue:</span>
+                                  <p className="font-medium">{req.venue || "-"}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Institute:</span>
+                                  <p className="font-medium">{req.training_institute}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Trainer:</span>
+                                  <p className="font-medium">{req.trainer}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex gap-2 pt-2">
+                                {req.allotment_status === "completed" ? (
+                                  <button
+                                    onClick={() => alert("Not Yet Issued")}
+                                    className="flex-1 px-3 py-2 bg-blue-100 text-blue-800 text-sm text-center rounded-md font-medium hover:bg-blue-200 transition-colors"
+                                  >
+                                    📜 Certificate
+                                  </button>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={() => completeSession(req.session_id)}
+                                      className="flex-1 px-3 py-2 bg-blue-600 text-sm text-white rounded-md hover:bg-blue-700"
+                                    >
+                                      Complete
+                                    </button>
+                                    <button
+                                      onClick={() => reviseSession(req.session_id)}
+                                      className="flex-1 px-3 py-2 bg-yellow-500 text-sm text-white rounded-md hover:bg-yellow-600"
+                                    >
+                                      Revise
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+
+                      {/* Desktop Table View - Approved & Completed */}
+                      <div className="hidden sm:block overflow-x-auto border rounded-lg shadow-sm">
+                        <table className="w-full text-left border-collapse min-w-[900px]">
+                          <thead className="bg-gradient-to-r from-green-600 to-green-400 text-white">
+                            <tr>
+                              <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Booking ID</th>
+                              <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Training Date</th>
+                              <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Name</th>
+                              <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold whitespace-nowrap">Phone</th>
+                              <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold text-center">Participants</th>
+                              <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Venue</th>
+                              <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Institute</th>
+                              <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Trainer</th>
+                              <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold text-center">Status</th>
+                              <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold text-center">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filterSessionsByChapter(requests)
+                              .filter((req) => req.allotment_status === "approved" || req.allotment_status === "completed")
+                              .sort((a, b) => {
+                                // Approved sessions first, then completed sessions
+                                if (a.allotment_status === "approved" && b.allotment_status === "completed") return -1;
+                                if (a.allotment_status === "completed" && b.allotment_status === "approved") return 1;
+                                // Within same status, sort by date (newest first)
+                                if (a.allotment_status === b.allotment_status) {
+                                  return new Date(b.requested_date) - new Date(a.requested_date);
+                                }
+                                return 0;
+                              })
+                              .map((req, index) => (
+                                <tr
+                                  key={req.session_id}
+                                  className={`border-b hover:bg-gray-50 transition ${
+                                    req.allotment_status === "approved" 
+                                      ? "bg-green-50 border-l-4 border-l-green-500 shadow-sm" 
+                                      : req.allotment_status === "completed"
+                                      ? "bg-blue-50 border-l-4 border-l-blue-500"
+                                      : index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                                  }`}
+                                >
+                                  <td className="p-2 lg:p-3 font-semibold text-gray-700 text-xs lg:text-sm">
+                                    {req.booking_id || `BK-${req.session_id?.slice(-6)}`}
+                                  </td>
+                                  <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm">
+                                    {formatDate(req.requested_date)}
+                                  </td>
+                                  <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm">{req.name || "-"}</td>
+                                  <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm whitespace-nowrap">{req.number || "-"}</td>
+                                  <td className="p-2 lg:p-3 text-center text-gray-600 text-xs lg:text-sm">
+                                    {req.no_of_participants || "-"}
+                                  </td>
+                                  <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm">{req.venue || "-"}</td>
+                                  <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm">{req.training_institute}</td>
+                                  <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm">{req.trainer}</td>
+                                  <td className="p-2 lg:p-3 text-center">
+                                    <span className={`px-2 py-1 text-xs rounded-full font-semibold whitespace-nowrap ${
+                                      req.allotment_status === "completed" 
+                                        ? "bg-blue-100 text-blue-700 border border-blue-300" 
+                                        : "bg-green-100 text-green-700 border border-green-300"
+                                    }`}>
+                                      {req.allotment_status === "completed" ? "Completed" : "Approved"}
+                                    </span>
+                                  </td>
+                                  <td className="p-2 lg:p-3 text-center">
+                                    <div className="flex justify-center gap-1 lg:gap-2">
+                                      {req.allotment_status === "completed" ? (
+                                        <button
+                                          onClick={() => alert("Not Yet Issued")}
+                                          className="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium hover:bg-blue-200 transition-colors"
+                                        >
+                                          📜 Certificate
+                                        </button>
+                                      ) : (
+                                        <>
+                                          <button
+                                            onClick={() => completeSession(req.session_id)}
+                                            className="px-2 lg:px-3 py-1 bg-blue-600 text-xs text-white rounded-md hover:bg-blue-700"
+                                          >
+                                            Complete
+                                          </button>
+                                          <button
+                                            onClick={() => reviseSession(req.session_id)}
+                                            className="px-2 lg:px-3 py-1 bg-yellow-500 text-xs text-white rounded-md hover:bg-yellow-600"
+                                          >
+                                            Revise
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </>
           )}
 
           {/* Approved Sessions */}
           {activeTab === "approved" && (
             <>
-              <h2 className="text-xl sm:text-2xl font-bold text-green-700 mb-4 sm:mb-6">
-                Approved & Completed Sessions
-              </h2>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-green-700">
+                  Approved & Completed Sessions
+                </h2>
+                {userRole === "admin" && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-gray-700">Filter by Chapter:</label>
+                    <select
+                      value={selectedChapterFilter}
+                      onChange={(e) => setSelectedChapterFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    >
+                      <option value="all">All Chapters</option>
+                      {chapterNames.map((chapter) => (
+                        <option key={chapter} value={chapter}>
+                          {chapter}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
               {loading ? (
                 <p className="text-center text-gray-500 py-8 sm:py-14">
                   ⏳ Loading sessions...
                 </p>
               ) : error ? (
                 <p className="text-center text-red-500 py-8 sm:py-14">{error}</p>
-              ) : requests.filter((req) => req.allotment_status === "approved" || req.allotment_status === "completed")
+              ) : filterSessionsByChapter(requests).filter((req) => req.allotment_status === "approved" || req.allotment_status === "completed")
                   .length === 0 ? (
                 <div className="text-center py-10 sm:py-20">
                   <p className="text-lg sm:text-xl text-gray-500">
@@ -746,23 +1100,23 @@ const AdminApprovalDashboard = () => {
                 <div>
                   {/* Section Status Summary */}
                   <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {requests.filter((req) => req.allotment_status === "completed").length > 0 && (
+                    {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "completed").length > 0 && (
                       <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
                         <h3 className="text-lg font-semibold text-blue-800 mb-2 flex items-center">
-                           Completed Sessions
+                          📜 Certificate Sessions
                           <span className="ml-2 bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full">
-                            {requests.filter((req) => req.allotment_status === "completed").length}
+                            {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "completed").length}
                           </span>
                         </h3>
-                        <p className="text-sm text-blue-600">Successfully completed training sessions</p>
+                        <p className="text-sm text-blue-600">Sessions with certificates issued</p>
                       </div>
                     )}
-                    {requests.filter((req) => req.allotment_status === "approved").length > 0 && (
+                    {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "approved").length > 0 && (
                       <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
                         <h3 className="text-lg font-semibold text-green-800 mb-2 flex items-center">
                           ✅ Ready for Completion
                           <span className="ml-2 bg-green-200 text-green-800 text-xs px-2 py-1 rounded-full">
-                            {requests.filter((req) => req.allotment_status === "approved").length}
+                            {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "approved").length}
                           </span>
                         </h3>
                         <p className="text-sm text-green-600">Approved sessions awaiting completion</p>
@@ -772,7 +1126,7 @@ const AdminApprovalDashboard = () => {
 
                   {/* Mobile Card View */}
                   <div className="block sm:hidden space-y-4">
-                    {requests
+                    {filterSessionsByChapter(requests)
                       .filter((req) => req.allotment_status === "approved" || req.allotment_status === "completed")
                       .sort((a, b) => {
                         // Approved sessions first (at the very top), then completed sessions
@@ -807,7 +1161,7 @@ const AdminApprovalDashboard = () => {
                                 ? "bg-blue-100 text-blue-800 border border-blue-300" 
                                 : "bg-green-100 text-green-800 border border-green-300"
                             }`}>
-                              {req.allotment_status === "completed" ? "Completed" : "" + req.allotment_status}
+                              {req.allotment_status === "completed" ? "📜 Certificate" : "" + req.allotment_status}
                             </span>
                           </div>
                           
@@ -840,9 +1194,12 @@ const AdminApprovalDashboard = () => {
 
                           <div className="flex gap-2 pt-2">
                             {req.allotment_status === "completed" ? (
-                              <div className="flex-1 px-3 py-2 bg-blue-100 text-blue-800 text-sm text-center rounded-md font-medium">
-                                ✅ Completed
-                              </div>
+                              <button
+                                onClick={() => alert("Not Yet Issued")}
+                                className="flex-1 px-3 py-2 bg-blue-100 text-blue-800 text-sm text-center rounded-md font-medium hover:bg-blue-200 transition-colors"
+                              >
+                                📜 Certificate
+                              </button>
                             ) : (
                               <>
                                 <button
@@ -872,7 +1229,7 @@ const AdminApprovalDashboard = () => {
                           <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Booking ID</th>
                           <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Training Date</th>
                           <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Name</th>
-                          <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold">Phone</th>
+                          <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold whitespace-nowrap">Phone</th>
                           <th className="p-2 lg:p-3 text-xs lg:text-sm font-semibold text-center">
                             Participants
                           </th>
@@ -884,7 +1241,7 @@ const AdminApprovalDashboard = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {requests
+                        {filterSessionsByChapter(requests)
                           .filter((req) => req.allotment_status === "approved" || req.allotment_status === "completed")
                           .sort((a, b) => {
                             // Approved sessions first (at the very top), then completed sessions
@@ -915,7 +1272,7 @@ const AdminApprovalDashboard = () => {
                                 {formatDate(req.requested_date)}
                               </td>
                               <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm">{req.name || "-"}</td>
-                              <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm">{req.number || "-"}</td>
+                              <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm whitespace-nowrap">{req.number || "-"}</td>
                               <td className="p-2 lg:p-3 text-center text-gray-600 text-xs lg:text-sm">
                                 {req.no_of_participants || "-"}
                               </td>
@@ -923,7 +1280,7 @@ const AdminApprovalDashboard = () => {
                               <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm">{req.training_institute}</td>
                               <td className="p-2 lg:p-3 text-gray-600 text-xs lg:text-sm">{req.trainer}</td>
                               <td className="p-2 lg:p-3 text-center">
-                                <span className={`px-2 py-1 text-xs rounded-full font-semibold ${
+                                <span className={`px-2 py-1 text-xs rounded-full font-semibold whitespace-nowrap ${
                                   req.allotment_status === "completed" 
                                     ? "bg-blue-100 text-blue-700 border border-blue-300" 
                                     : "bg-green-100 text-green-700 border border-green-300"
@@ -934,9 +1291,12 @@ const AdminApprovalDashboard = () => {
                               <td className="p-2 lg:p-3 text-center">
                                 <div className="flex justify-center gap-1 lg:gap-2">
                                   {req.allotment_status === "completed" ? (
-                                    <span className="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium">
-                                      ✅ Completed
-                                    </span>
+                                    <button
+                                      onClick={() => alert("Not Yet Issued")}
+                                      className="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium hover:bg-blue-200 transition-colors"
+                                    >
+                                      📜 Certificate
+                                    </button>
                                   ) : (
                                     <>
                                       <button

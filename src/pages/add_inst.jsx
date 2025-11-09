@@ -153,7 +153,7 @@ const AddNewInstitute = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#A7C7E7] font-sans">
+    <div className="min-h-screen bg-white font-sans">
       <Header />
       
       {/* Alert Component */}

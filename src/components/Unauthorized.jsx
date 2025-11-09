@@ -4,7 +4,7 @@ import Header from './Header';
 
 const Unauthorized = () => {
   return (
-    <div className="relative min-h-screen w-full bg-[#A7C7E7]">
+    <div className="relative min-h-screen w-full bg-white">
       <Header />
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center bg-white/80 p-8 rounded-2xl shadow-xl border max-w-md mx-4">

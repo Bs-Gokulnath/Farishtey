@@ -97,7 +97,7 @@ const SuperAdminApprovalDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#A7C7E7]">
+    <div className="min-h-screen bg-white">
       {/* Alert Component */}
       <Alert
         isVisible={alert.isVisible}

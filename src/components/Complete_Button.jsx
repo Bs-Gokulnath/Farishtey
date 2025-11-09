@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Loading, { ButtonLoading } from "./Loading";
 
-const API_BASE_URL = "https://www.farishtey.in/api/";
+const API_BASE_URL = "https://www.farishtey.in/api";
 
 const CompleteSessionPopup = ({ isOpen, onClose, session, onComplete }) => {
   const [mediaFiles, setMediaFiles] = useState([null, null, null, null]); // 4 slots: 1 mandatory + 3 optional
@@ -11,11 +11,21 @@ const CompleteSessionPopup = ({ isOpen, onClose, session, onComplete }) => {
   const [participantSelectionConfirmed, setParticipantSelectionConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [participantsLoading, setParticipantsLoading] = useState(false);
+  const [isEditingParticipants, setIsEditingParticipants] = useState(false);
+  const [editableParticipantsCount, setEditableParticipantsCount] = useState(0);
 
   // Fetch registered participants for this session
   useEffect(() => {
     if (isOpen && session) {
       fetchRegisteredParticipants();
+      // Initialize editable participants count
+      const initialCount = session?.total_participants || 
+                          session?.participants || 
+                          session?.participant_count || 
+                          session?.no_of_participants || 
+                          session?.expected_participants || 
+                          0;
+      setEditableParticipantsCount(Number(initialCount));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, session]);
@@ -105,18 +115,23 @@ const CompleteSessionPopup = ({ isOpen, onClose, session, onComplete }) => {
       // Add only selected participant data
       const selectedParticipantData = registeredParticipants.filter(p => selectedParticipants.includes(p.id));
       formData.append('participants', JSON.stringify(selectedParticipantData));
+      formData.append('total_participants', editableParticipantsCount);
+      formData.append('allotment_status', 'completed');
 
-      // TODO: Replace with actual API endpoint
-      // const response = await axios.post(`${API_BASE_URL}/complete-session-with-media`, formData, {
-      //   headers: {
-      //     'Content-Type': 'multipart/form-data',
-      //   },
-      // });
+      // Call the actual API endpoint to complete the session
+      const response = await fetch(`${API_BASE_URL}/complete-session`, {
+        method: 'POST',
+        body: formData,
+      });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (!response.ok) {
+        throw new Error('Failed to complete session');
+      }
 
-      onComplete(session.session_id);
+      const result = await response.json();
+      console.log('Session completed successfully:', result);
+
+      onComplete();
       onClose();
       
       // Reset form
@@ -230,14 +245,41 @@ const CompleteSessionPopup = ({ isOpen, onClose, session, onComplete }) => {
               </div>
               <div>
                 <span className="text-blue-600 font-medium">Participants:</span>
-                <p className="font-medium">
-                  {session?.total_participants || 
-                   session?.participants || 
-                   session?.participant_count || 
-                   session?.no_of_participants || 
-                   session?.expected_participants || 
-                   'N/A'}
-                </p>
+                <div className="flex items-center space-x-2">
+                  {isEditingParticipants ? (
+                    <input
+                      type="number"
+                      min="1"
+                      value={editableParticipantsCount}
+                      onChange={(e) => setEditableParticipantsCount(Number(e.target.value))}
+                      className="w-20 px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          setIsEditingParticipants(false);
+                        }
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <p className="font-medium">{editableParticipantsCount || 'N/A'}</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingParticipants(!isEditingParticipants)}
+                    className="text-blue-600 hover:text-blue-800 p-1"
+                    title="Edit participants count"
+                  >
+                    {isEditingParticipants ? (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
               <div>
                 <span className="text-blue-600 font-medium">Registered:</span>
@@ -255,9 +297,12 @@ const CompleteSessionPopup = ({ isOpen, onClose, session, onComplete }) => {
           </div>
 
           {/* Media Upload Section */}
-          <div>
+          <div className={editableParticipantsCount !== registeredParticipants.length ? 'opacity-50 pointer-events-none' : ''}>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
               Upload Media Files <span className="text-red-500">*</span>
+              {editableParticipantsCount !== registeredParticipants.length && (
+                <span className="text-sm text-gray-500 font-normal ml-2">(Fix participants count first)</span>
+              )}
             </h3>
             <p className="text-sm text-gray-600 mb-4">
               Upload training session photos/videos (1 mandatory + 3 optional)
@@ -309,9 +354,16 @@ const CompleteSessionPopup = ({ isOpen, onClose, session, onComplete }) => {
           </div>
 
           {/* Registered Participants Section */}
-          <div>
+          <div className={!mediaFiles[0] || editableParticipantsCount !== registeredParticipants.length ? 'opacity-50 pointer-events-none' : ''}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Registered Participants</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Registered Participants
+                {(!mediaFiles[0] || editableParticipantsCount !== registeredParticipants.length) && (
+                  <span className="text-sm text-gray-500 font-normal ml-2">
+                    ({!mediaFiles[0] ? 'Upload media first' : 'Fix participants count first'})
+                  </span>
+                )}
+              </h3>
               {registeredParticipants.length > 0 && (
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
@@ -451,30 +503,113 @@ const CompleteSessionPopup = ({ isOpen, onClose, session, onComplete }) => {
             )}
           </div>
 
+          {/* Step-by-Step Progress */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-blue-800 mb-3">Completion Progress</h3>
+            <div className="space-y-2">
+              {/* Step 1: Participants Count */}
+              <div className="flex items-center space-x-3">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
+                  editableParticipantsCount === registeredParticipants.length 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-gray-300 text-gray-600'
+                }`}>
+                  {editableParticipantsCount === registeredParticipants.length ? '✓' : '1'}
+                </div>
+                <span className={`text-sm ${
+                  editableParticipantsCount === registeredParticipants.length 
+                    ? 'text-green-700 font-medium' 
+                    : 'text-gray-600'
+                }`}>
+                  Match participants count ({editableParticipantsCount}/{registeredParticipants.length})
+                </span>
+              </div>
+              
+              {/* Step 2: Media Upload */}
+              <div className="flex items-center space-x-3">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
+                  mediaFiles[0] && editableParticipantsCount === registeredParticipants.length
+                    ? 'bg-green-500 text-white' 
+                    : editableParticipantsCount === registeredParticipants.length
+                    ? 'bg-yellow-500 text-white'
+                    : 'bg-gray-300 text-gray-600'
+                }`}>
+                  {mediaFiles[0] && editableParticipantsCount === registeredParticipants.length ? '✓' : '2'}
+                </div>
+                <span className={`text-sm ${
+                  mediaFiles[0] && editableParticipantsCount === registeredParticipants.length
+                    ? 'text-green-700 font-medium'
+                    : editableParticipantsCount === registeredParticipants.length
+                    ? 'text-yellow-700'
+                    : 'text-gray-600'
+                }`}>
+                  Upload media files (Required)
+                </span>
+              </div>
+              
+              {/* Step 3: Select Participants */}
+              <div className="flex items-center space-x-3">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
+                  participantSelectionConfirmed && mediaFiles[0] && editableParticipantsCount === registeredParticipants.length
+                    ? 'bg-green-500 text-white' 
+                    : mediaFiles[0] && editableParticipantsCount === registeredParticipants.length
+                    ? 'bg-yellow-500 text-white'
+                    : 'bg-gray-300 text-gray-600'
+                }`}>
+                  {participantSelectionConfirmed && mediaFiles[0] && editableParticipantsCount === registeredParticipants.length ? '✓' : '3'}
+                </div>
+                <span className={`text-sm ${
+                  participantSelectionConfirmed && mediaFiles[0] && editableParticipantsCount === registeredParticipants.length
+                    ? 'text-green-700 font-medium'
+                    : mediaFiles[0] && editableParticipantsCount === registeredParticipants.length
+                    ? 'text-yellow-700'
+                    : 'text-gray-600'
+                }`}>
+                  Select participants who attended
+                </span>
+              </div>
+              
+              {/* Step 4: Complete Session */}
+              <div className="flex items-center space-x-3">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
+                  participantSelectionConfirmed && mediaFiles[0] && editableParticipantsCount === registeredParticipants.length
+                    ? 'bg-yellow-500 text-white' 
+                    : 'bg-gray-300 text-gray-600'
+                }`}>
+                  4
+                </div>
+                <span className={`text-sm ${
+                  participantSelectionConfirmed && mediaFiles[0] && editableParticipantsCount === registeredParticipants.length
+                    ? 'text-yellow-700 font-medium'
+                    : 'text-gray-600'
+                }`}>
+                  Confirm completion
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
-            >
-              Cancel
-            </button>
+          <div className="flex justify-center pt-6 border-t border-gray-200">
             <button
               type="submit"
-              disabled={loading || !mediaFiles[0] || !participantSelectionConfirmed}
-              className={`px-6 py-3 rounded-lg font-medium ${
-                loading || !mediaFiles[0] || !participantSelectionConfirmed
+              disabled={loading || !mediaFiles[0] || !participantSelectionConfirmed || editableParticipantsCount !== registeredParticipants.length}
+              className={`px-8 py-3 rounded-lg font-medium ${
+                loading || !mediaFiles[0] || !participantSelectionConfirmed || editableParticipantsCount !== registeredParticipants.length
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-green-600 hover:bg-green-700"
               } text-white`}
             >
               {loading ? (
                 <ButtonLoading />
+              ) : editableParticipantsCount !== registeredParticipants.length ? (
+                "Step 1: Fix Participants Count"
+              ) : !mediaFiles[0] ? (
+                "Step 2: Upload Media Files"
               ) : !participantSelectionConfirmed ? (
-                "Please Confirm Attendance First"
+                "Step 3: Select Participants"
               ) : (
-                "Complete Session"
+                "✓ Confirm Completion"
               )}
             </button>
           </div>

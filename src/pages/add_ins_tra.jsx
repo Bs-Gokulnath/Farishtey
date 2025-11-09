@@ -13,7 +13,7 @@ const AdminApprovalPage = () => {
   } = useContext(TrainingContext);
 
   return (
-    <div className="min-h-screen bg-[#A7C7E7] flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <Header />
 

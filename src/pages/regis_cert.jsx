@@ -42,7 +42,7 @@ const RegisterCertificate = () => {
   const fetchSessionsForCity = async (city) => {
     setSessionsLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/sessions`);
+      const response = await axios.get(`${API_BASE_URL}sessions`);
       const sessions = response.data || [];
       
       // Filter sessions: approved but not completed, and match city
@@ -198,7 +198,7 @@ const RegisterCertificate = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#A7C7E7] font-sans">
+    <div className="min-h-screen bg-white font-sans">
       <Alert
         isVisible={alert.isVisible}
         message={alert.message}

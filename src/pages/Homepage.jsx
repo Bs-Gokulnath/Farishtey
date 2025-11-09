@@ -4,7 +4,7 @@ import Header from "../components/Header"; // Assuming Header is in src/componen
 
 const Homepage = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-[#A7C7E7]">
+    <div className="flex flex-col min-h-screen bg-white">
       <Header isHomepage={true} />
       <div className="flex flex-grow items-center justify-center p-4 mt-[-130px]">
         <div className="flex flex-wrap justify-center items-center gap-4 md:gap-10">
