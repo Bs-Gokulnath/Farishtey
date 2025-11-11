@@ -134,9 +134,8 @@ const BookTraining = () => {
 
         <form
           onSubmit={handleSubmit}
-          className="relative flex-1 bg-white shadow-2xl rounded-3xl p-6 border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="relative flex-1 bg-white shadow-md rounded-lg p-6 border border-gray-300 grid grid-cols-1 md:grid-cols-2 gap-6"
           style={{
-            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1)",
             maxWidth: "720px",
           }}
         >
@@ -177,6 +176,8 @@ const BookTraining = () => {
               type="number"
               value={formData.no_of_participants}
               onChange={handleChange}
+              min="1"
+              max="100"
             />
             <Input
               label="Chapter"
@@ -206,14 +207,14 @@ const BookTraining = () => {
                   onChange={handleChange}
                   placeholder="hh:mm"
                   pattern="^(0?[1-9]|1[0-2]):[0-5][0-9]$"
-                  className="flex-1 border-0 border-b-2 border-gray-200 bg-gray-50 rounded-lg px-4 py-3 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200 text-gray-900"
+                  className="flex-1 border border-gray-300 bg-white rounded-md px-4 py-3 focus:border-blue-500 focus:outline-none text-gray-900"
                   required
                 />
                 <select
                   name="period"
                   value={period}
                   onChange={handleChange}
-                  className="w-28 border-0 border-b-2 border-gray-200 bg-gray-50 rounded-lg px-3 py-3 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200 text-gray-900"
+                  className="w-28 border border-gray-300 bg-white rounded-md px-3 py-3 focus:border-blue-500 focus:outline-none text-gray-900"
                   required
                 >
                   <option value="">AM/PM</option>
@@ -229,9 +230,9 @@ const BookTraining = () => {
             <button
               type="submit"
               disabled={!isFormValid || isLoading}
-              className={`w-full font-semibold py-3 rounded-2xl transition-all duration-200 text-base ${
+              className={`w-full font-semibold py-3 rounded-md text-base ${
                 isFormValid && !isLoading
-                  ? "bg-gradient-to-r from-gray-800 to-gray-900 text-white shadow-lg hover:shadow-xl hover:from-gray-900 hover:to-black focus:ring-4 focus:ring-gray-300 transform hover:scale-[1.02]"
+                  ? "bg-gray-800 text-white hover:bg-gray-900"
                   : "bg-gray-400 text-gray-200 cursor-not-allowed"
               }`}
             >
@@ -255,9 +256,9 @@ const BookTraining = () => {
 };
 
 // Custom Input Component
-const Input = ({ label, name, value, onChange, type = "text", min }) => (
+const Input = ({ label, name, value, onChange, type = "text", min, max }) => (
   <div>
-    <label htmlFor={name} className="block text-gray-500 font-medium mb-2 text-sm">
+    <label htmlFor={name} className="block text-gray-700 font-medium mb-2 text-sm">
       {label}
     </label>
     <input
@@ -266,9 +267,10 @@ const Input = ({ label, name, value, onChange, type = "text", min }) => (
       id={name}
       value={value}
       min={min}
+      max={max}
       onChange={onChange}
       placeholder={`Enter ${label.toLowerCase()}`}
-      className="w-full border-0 border-b-2 border-gray-200 bg-gray-50 rounded-lg px-4 py-3 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200 text-gray-900 placeholder-gray-400"
+      className="w-full border border-gray-300 bg-white rounded-md px-4 py-3 focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-400"
       required
     />
   </div>

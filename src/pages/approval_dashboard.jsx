@@ -213,7 +213,7 @@ const AdminApprovalDashboard = () => {
         trainer,
         allotment_status: "approved",
       });
-      showSuccess("✅ Session approved successfully!");
+      showSuccess(" Session approved successfully!");
       await fetchSessions();
     } catch (err) {
       console.error("Approval failed:", err);
@@ -235,7 +235,7 @@ const AdminApprovalDashboard = () => {
       // Close the popup first
       closeCompletePopup();
       
-      showSuccess("✅ Session completed successfully with media files!");
+      showSuccess(" Session completed successfully with media files!");
       
       // Refresh data from backend to get the updated status
       await fetchSessions();
@@ -250,16 +250,6 @@ const AdminApprovalDashboard = () => {
     const session = requests.find(req => req.session_id === session_id);
     if (session) {
       openCompletePopup(session);
-    }
-  };
-
-  const reviseSession = async (session_id) => {
-    if (!session_id) return;
-    try {
-      await updateSession(session_id, "allotment_status", "revision_needed");
-      showWarning("⚠️ Session sent for revision!");
-    } catch (err) {
-      console.error("Revise failed:", err);
     }
   };
 
@@ -291,7 +281,7 @@ const AdminApprovalDashboard = () => {
   const handleApproveTrainer = async (id) => {
     try {
       await axios.post(`${API_BASE_URL}/approve-trainer`, { trainer_id: id });
-      showSuccess("✅ Trainer approved successfully");
+      showSuccess(" Trainer approved successfully");
       fetchPendingData();
       fetchTrainers();
     } catch (err) {
@@ -327,7 +317,7 @@ const AdminApprovalDashboard = () => {
       await axios.post(`${API_BASE_URL}/approve-institute`, {
         institute_id: id,
       });
-      showSuccess("✅ Institute approved successfully");
+      showSuccess(" Institute approved successfully");
       fetchPendingData();
       fetchInstitutes();
     } catch (err) {
@@ -373,11 +363,11 @@ const AdminApprovalDashboard = () => {
     if (userRole === "admin") {
       setActiveTab(tabName);
     }
-    // ROLE_DEFAULT has access to all tabs except Institute Approval
-    else if (userRole === "ROLE_DEFAULT" && tabName !== "institute") {
+    // ROLE_DEFAULT has access to all tabs
+    else if (userRole === "ROLE_DEFAULT") {
       setActiveTab(tabName);
     }
-    // Block access to Institute Approval tab for ROLE_DEFAULT
+    // Block access for other roles
     else {
       showError("You don't have permission to access this tab");
     }
@@ -426,7 +416,7 @@ const AdminApprovalDashboard = () => {
                 }`}
               >
                 <span className="hidden sm:inline">Approved Session</span>
-                <span className="sm:hidden">✅Approved</span>
+                <span className="sm:hidden">Approved</span>
               </button>
             )}
             <button
@@ -448,8 +438,17 @@ const AdminApprovalDashboard = () => {
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
-              <span className="hidden sm:inline">🏫 Institute Approval</span>
-              <span className="sm:hidden">🏫 Institutes</span>
+              {userRole === "admin" ? (
+                <>
+                  <span className="hidden sm:inline">🏫 Institute Approval</span>
+                  <span className="sm:hidden">🏫 Institutes</span>
+                </>
+              ) : (
+                <>
+                  <span className="hidden sm:inline">📤 Upload Offline Data</span>
+                  <span className="sm:hidden">📤 Upload</span>
+                </>
+              )}
             </button>
           </div>
 
@@ -618,7 +617,7 @@ const AdminApprovalDashboard = () => {
                                 onClick={() => alert("Not Yet Issued")}
                                 className="flex-1 px-3 py-2 bg-blue-100 text-blue-800 text-sm text-center rounded-md font-medium hover:bg-blue-200 transition-colors"
                               >
-                                📜 Certificate
+                                 Certificate
                               </button>
                             ) : req.allotment_status === "rejected" ? (
                               <div className="flex-1 px-3 py-2 bg-red-100 text-red-800 text-sm text-center rounded-md font-medium">
@@ -771,7 +770,7 @@ const AdminApprovalDashboard = () => {
                                       onClick={() => alert("Not Yet Issued")}
                                       className="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium hover:bg-blue-200 transition-colors"
                                     >
-                                      📜 Certificate
+                                       Certificate
                                     </button>
                                   ) : req.allotment_status === "rejected" ? (
                                     <span className="px-2 lg:px-3 py-1 bg-red-100 text-red-800 text-xs rounded-md font-medium">
@@ -837,7 +836,7 @@ const AdminApprovalDashboard = () => {
                         {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "approved").length > 0 && (
                           <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
                             <h3 className="text-lg font-semibold text-green-800 mb-2 flex items-center">
-                              ✅ Ready for Completion
+                               Ready for Completion
                               <span className="ml-2 bg-green-200 text-green-800 text-xs px-2 py-1 rounded-full">
                                 {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "approved").length}
                               </span>
@@ -848,7 +847,7 @@ const AdminApprovalDashboard = () => {
                         {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "completed").length > 0 && (
                           <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
                             <h3 className="text-lg font-semibold text-blue-800 mb-2 flex items-center">
-                              📜 Certificate Sessions
+                               Completed Sessions
                               <span className="ml-2 bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full">
                                 {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "completed").length}
                               </span>
@@ -932,23 +931,15 @@ const AdminApprovalDashboard = () => {
                                     onClick={() => alert("Not Yet Issued")}
                                     className="flex-1 px-3 py-2 bg-blue-100 text-blue-800 text-sm text-center rounded-md font-medium hover:bg-blue-200 transition-colors"
                                   >
-                                    📜 Certificate
+                                     Certificate
                                   </button>
                                 ) : (
-                                  <>
-                                    <button
-                                      onClick={() => completeSession(req.session_id)}
-                                      className="flex-1 px-3 py-2 bg-blue-600 text-sm text-white rounded-md hover:bg-blue-700"
-                                    >
-                                      Complete
-                                    </button>
-                                    <button
-                                      onClick={() => reviseSession(req.session_id)}
-                                      className="flex-1 px-3 py-2 bg-yellow-500 text-sm text-white rounded-md hover:bg-yellow-600"
-                                    >
-                                      Revise
-                                    </button>
-                                  </>
+                                  <button
+                                    onClick={() => completeSession(req.session_id)}
+                                    className="flex-1 px-3 py-2 bg-blue-600 text-sm text-white rounded-md hover:bg-blue-700"
+                                  >
+                                    Complete
+                                  </button>
                                 )}
                               </div>
                             </div>
@@ -1026,23 +1017,15 @@ const AdminApprovalDashboard = () => {
                                           onClick={() => alert("Not Yet Issued")}
                                           className="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium hover:bg-blue-200 transition-colors"
                                         >
-                                          📜 Certificate
+                                           Certificate
                                         </button>
                                       ) : (
-                                        <>
-                                          <button
-                                            onClick={() => completeSession(req.session_id)}
-                                            className="px-2 lg:px-3 py-1 bg-blue-600 text-xs text-white rounded-md hover:bg-blue-700"
-                                          >
-                                            Complete
-                                          </button>
-                                          <button
-                                            onClick={() => reviseSession(req.session_id)}
-                                            className="px-2 lg:px-3 py-1 bg-yellow-500 text-xs text-white rounded-md hover:bg-yellow-600"
-                                          >
-                                            Revise
-                                          </button>
-                                        </>
+                                        <button
+                                          onClick={() => completeSession(req.session_id)}
+                                          className="px-2 lg:px-3 py-1 bg-blue-600 text-xs text-white rounded-md hover:bg-blue-700"
+                                        >
+                                          Complete
+                                        </button>
                                       )}
                                     </div>
                                   </td>
@@ -1103,7 +1086,7 @@ const AdminApprovalDashboard = () => {
                     {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "completed").length > 0 && (
                       <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
                         <h3 className="text-lg font-semibold text-blue-800 mb-2 flex items-center">
-                          📜 Certificate Sessions
+                           Completed Sessions
                           <span className="ml-2 bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full">
                             {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "completed").length}
                           </span>
@@ -1114,7 +1097,7 @@ const AdminApprovalDashboard = () => {
                     {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "approved").length > 0 && (
                       <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
                         <h3 className="text-lg font-semibold text-green-800 mb-2 flex items-center">
-                          ✅ Ready for Completion
+                           Ready for Completion
                           <span className="ml-2 bg-green-200 text-green-800 text-xs px-2 py-1 rounded-full">
                             {filterSessionsByChapter(requests).filter((req) => req.allotment_status === "approved").length}
                           </span>
@@ -1161,7 +1144,7 @@ const AdminApprovalDashboard = () => {
                                 ? "bg-blue-100 text-blue-800 border border-blue-300" 
                                 : "bg-green-100 text-green-800 border border-green-300"
                             }`}>
-                              {req.allotment_status === "completed" ? "📜 Certificate" : "" + req.allotment_status}
+                              {req.allotment_status === "completed" ? " Certificate" : "" + req.allotment_status}
                             </span>
                           </div>
                           
@@ -1198,23 +1181,15 @@ const AdminApprovalDashboard = () => {
                                 onClick={() => alert("Not Yet Issued")}
                                 className="flex-1 px-3 py-2 bg-blue-100 text-blue-800 text-sm text-center rounded-md font-medium hover:bg-blue-200 transition-colors"
                               >
-                                📜 Certificate
+                                 Certificate
                               </button>
                             ) : (
-                              <>
-                                <button
-                                  onClick={() => completeSession(req.session_id)}
-                                  className="flex-1 px-3 py-2 bg-blue-600 text-sm text-white rounded-md hover:bg-blue-700"
-                                >
-                                  Complete
-                                </button>
-                                <button
-                                  onClick={() => reviseSession(req.session_id)}
-                                  className="flex-1 px-3 py-2 bg-yellow-500 text-sm text-white rounded-md hover:bg-yellow-600"
-                                >
-                                  Revise
-                                </button>
-                              </>
+                              <button
+                                onClick={() => completeSession(req.session_id)}
+                                className="flex-1 px-3 py-2 bg-blue-600 text-sm text-white rounded-md hover:bg-blue-700"
+                              >
+                                Complete
+                              </button>
                             )}
                           </div>
                         </div>
@@ -1295,23 +1270,15 @@ const AdminApprovalDashboard = () => {
                                       onClick={() => alert("Not Yet Issued")}
                                       className="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-md font-medium hover:bg-blue-200 transition-colors"
                                     >
-                                      📜 Certificate
+                                       Certificate
                                     </button>
                                   ) : (
-                                    <>
-                                      <button
-                                        onClick={() => completeSession(req.session_id)}
-                                        className="px-2 lg:px-3 py-1 bg-blue-600 text-xs text-white rounded-md hover:bg-blue-700"
-                                      >
-                                        Complete
-                                      </button>
-                                      <button
-                                        onClick={() => reviseSession(req.session_id)}
-                                        className="px-2 lg:px-3 py-1 bg-yellow-500 text-xs text-white rounded-md hover:bg-yellow-600"
-                                      >
-                                        Revise
-                                      </button>
-                                    </>
+                                    <button
+                                      onClick={() => completeSession(req.session_id)}
+                                      className="px-2 lg:px-3 py-1 bg-blue-600 text-xs text-white rounded-md hover:bg-blue-700"
+                                    >
+                                      Complete
+                                    </button>
                                   )}
                                 </div>
                               </td>
@@ -1463,21 +1430,23 @@ const AdminApprovalDashboard = () => {
             </section>
           )}
 
-          {/* Institute Approval */}
+          {/* Institute Approval / Upload Offline Data */}
           {activeTab === "institute" && (
             <section>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-700 mb-4 sm:mb-6">
-                Pending Institutes
-              </h2>
-              {approvalLoading ? (
-                <p className="text-center text-gray-500 py-8 sm:py-14">
-                  ⏳ Loading pending institutes...
-                </p>
-              ) : pendingInstitutes.length === 0 ? (
-                <div className="text-center py-6 sm:py-10 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500">No pending institutes to approve.</p>
-                </div>
-              ) : (
+              {userRole === "admin" ? (
+                <>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-700 mb-4 sm:mb-6">
+                    Pending Institutes
+                  </h2>
+                  {approvalLoading ? (
+                    <p className="text-center text-gray-500 py-8 sm:py-14">
+                      ⏳ Loading pending institutes...
+                    </p>
+                  ) : pendingInstitutes.length === 0 ? (
+                    <div className="text-center py-6 sm:py-10 bg-gray-50 rounded-lg">
+                      <p className="text-gray-500">No pending institutes to approve.</p>
+                    </div>
+                  ) : (
                 <>
                   {/* Mobile Card View */}
                   <div className="block sm:hidden space-y-4">
@@ -1603,6 +1572,141 @@ const AdminApprovalDashboard = () => {
                     </table>
                   </div>
                 </>
+              )}
+                </>
+              ) : (
+                // Upload Offline Data section for ROLE_DEFAULT
+                <div className="space-y-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-indigo-700 mb-4 sm:mb-6">
+                    📤 Upload Offline Training Data
+                  </h2>
+                  
+                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 sm:p-8 border-2 border-indigo-200">
+                    <div className="text-center mb-6">
+                      <div className="text-6xl mb-4">📊</div>
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                        Upload Your Offline Training Data
+                      </h3>
+                      <p className="text-gray-600 text-sm sm:text-base">
+                        Submit training session data that was conducted offline
+                      </p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-6 shadow-md">
+                      <form className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Training Date *
+                            </label>
+                            <input
+                              type="date"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Number of Participants *
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                              placeholder="Enter count"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Venue/Location *
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            placeholder="Enter venue name or location"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Institute/Organization Name *
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            placeholder="Enter institute name"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Trainer Name *
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            placeholder="Enter trainer name"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Upload Photos/Videos
+                          </label>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*,video/*"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Upload training session photos or videos (optional)
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Additional Notes
+                          </label>
+                          <textarea
+                            rows="3"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                            placeholder="Any additional information about the training session..."
+                          ></textarea>
+                        </div>
+
+                        <div className="flex gap-3 pt-4">
+                          <button
+                            type="submit"
+                            className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg"
+                          >
+                            📤 Submit Training Data
+                          </button>
+                          <button
+                            type="reset"
+                            className="px-6 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+
+                    <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        <strong>📝 Note:</strong> Please ensure all mandatory fields (*) are filled correctly. 
+                        The submitted data will be reviewed by the admin before being added to the system.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </section>
           )}
