@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import Alert from "../components/Alert";
 import useAlert from "../components/useAlert";
 
-const API_BASE_URL = "https://www.farishtey.in/api/";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const AddNewInstitute = () => {
   const navigate = useNavigate();
@@ -138,8 +138,7 @@ const AddNewInstitute = () => {
 
       showSuccess("Institute added successfully");
       navigate("/approval");
-    } catch (err) {
-      console.error("Failed to add institute", err);
+    } catch {
       showError("Failed to add institute. Please try again.");
     } finally {
       setLoading(false);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Loading, { ButtonLoading } from "./Loading";
 
-const API_BASE_URL = "https://www.farishtey.in/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const CompleteSessionPopup = ({ isOpen, onClose, session, onComplete }) => {
   const [mediaFiles, setMediaFiles] = useState([null, null, null, null]); // 4 slots: 1 mandatory + 3 optional
@@ -46,11 +46,8 @@ const CompleteSessionPopup = ({ isOpen, onClose, session, onComplete }) => {
         ...participant,
         id: participant.id || `participant_${index + 1}`
       }));
-      console.log("Loaded participants:", participantsWithIds);
       setRegisteredParticipants(participantsWithIds);
-    } catch (error) {
-      console.error("Failed to fetch participants:", error);
-      
+    } catch {
       // Fallback to mock data if API fails (for development)
       const mockParticipants = [
         { 
@@ -128,8 +125,7 @@ const CompleteSessionPopup = ({ isOpen, onClose, session, onComplete }) => {
         throw new Error('Failed to complete session');
       }
 
-      const result = await response.json();
-      console.log('Session completed successfully:', result);
+      await response.json();
 
       onComplete();
       onClose();
@@ -139,8 +135,7 @@ const CompleteSessionPopup = ({ isOpen, onClose, session, onComplete }) => {
       setRegisteredParticipants([]);
       setSelectedParticipants([]);
       setParticipantSelectionConfirmed(false);
-    } catch (error) {
-      console.error("Failed to complete session:", error);
+    } catch {
       alert("Failed to complete session. Please try again.");
     } finally {
       setLoading(false);
@@ -157,21 +152,10 @@ const CompleteSessionPopup = ({ isOpen, onClose, session, onComplete }) => {
 
   // Participant selection functions
   const handleParticipantSelect = (participantId, isSelected) => {
-    console.log(`Selecting participant ${participantId}: ${isSelected}`);
-    console.log("Current selected:", selectedParticipants);
-    
     if (isSelected) {
-      setSelectedParticipants(prev => {
-        const newSelected = [...prev, participantId];
-        console.log("New selected (adding):", newSelected);
-        return newSelected;
-      });
+      setSelectedParticipants(prev => [...prev, participantId]);
     } else {
-      setSelectedParticipants(prev => {
-        const newSelected = prev.filter(id => id !== participantId);
-        console.log("New selected (removing):", newSelected);
-        return newSelected;
-      });
+      setSelectedParticipants(prev => prev.filter(id => id !== participantId));
     }
     // Reset confirmation when selection changes
     setParticipantSelectionConfirmed(false);

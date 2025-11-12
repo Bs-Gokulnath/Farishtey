@@ -3,7 +3,7 @@ import axios from "axios";
 import Header from "../components/Header";
 import Loading from "../components/Loading";
 
-const API_BASE_URL = "https://www.farishtey.in/api/";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const MyTrainingRequests = () => {
   const [requests, setRequests] = useState([]);
@@ -18,8 +18,7 @@ const MyTrainingRequests = () => {
         const res = await axios.get(`${API_BASE_URL}sessions?email=${userEmail}`);
         const reversed = (res.data || []).reverse();
         setRequests(reversed);
-      } catch (err) {
-        console.error(err);
+      } catch {
         setError("Unable to fetch your training requests.");
       } finally {
         setLoading(false);

@@ -14,7 +14,7 @@ const Signin = () => {
   const inputsRef = useRef([]);
   const navigate = useNavigate();
 
-  const API_BASE_URL = "https://www.farishtey.in/api";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const handleOtpChange = (e, index) => {
     const { value } = e.target;
@@ -42,16 +42,13 @@ const Signin = () => {
     setGeneratedOtp(newOtp);
 
     try {
-      console.log("Sending OTP:", { email, otp: newOtp });
-      const response = await axios.post(`${API_BASE_URL}/send-otp`, {
+      await axios.post(`${API_BASE_URL}/send-otp`, {
         email,
         otp: newOtp,
       });
-      console.log("OTP response:", response.data);
       setStep("otp");
       alert("OTP sent to your email.");
     } catch (err) {
-      console.error("Send OTP error:", err);
       let errorMessage = "Failed to send OTP";
       if (err.response?.data?.detail) {
         errorMessage = Array.isArray(err.response.data.detail)
@@ -81,9 +78,7 @@ const Signin = () => {
 
     setLoading(true);
     try {
-      console.log("Signing in user:", { email });
       const response = await axios.post(`${API_BASE_URL}/signin`, { email });
-      console.log("Signin response:", response.data);
 
       if (response.status === 200) {
         alert("Signin successful!");
@@ -100,7 +95,6 @@ const Signin = () => {
         }
       }
     } catch (err) {
-      console.error("Signin error:", err);
       let errorMessage = "Signin failed";
       if (err.response?.data?.detail) {
         errorMessage = Array.isArray(err.response.data.detail)

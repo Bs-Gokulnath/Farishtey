@@ -5,10 +5,10 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Loading, { ButtonLoading } from "../components/Loading";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const BookTraining = () => {
   const { addRequest } = useContext(TrainingContext);
-
-  const API_BASE_URL = "https://www.farishtey.in/api/";
 
   const [formData, setFormData] = useState({
     name: "",
@@ -75,16 +75,14 @@ const BookTraining = () => {
         let result;
         try {
           result = await response.json();
-          console.log("Response JSON:", result);
-        } catch (err) {
-          console.warn("Failed to parse JSON:", err);
+        } catch {
           result = {};
         }
 
         try {
           addRequest(result);
-        } catch (err) {
-          console.error("addRequest failed:", err);
+        } catch {
+          // Failed to add request to context
         }
 
         toast.success("Request Submitted Successfully!", {
@@ -97,15 +95,12 @@ const BookTraining = () => {
           window.location.reload();
         }, 2200);
       } else {
-        const errorData = await response.json();
-        console.error("Backend error response:", errorData);
         toast.error("Failed to submit request. Try again.", {
           position: "top-right",
           autoClose: 3000,
         });
       }
-    } catch (error) {
-      console.error("Fetch error:", error);
+    } catch {
       toast.error("Error submitting request. Please try again later.", {
         position: "top-right",
         autoClose: 3000,

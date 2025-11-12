@@ -6,7 +6,7 @@ import Alert from "../components/Alert";
 import useAlert from "../components/useAlert";
 import Loading, { ButtonLoading } from "../components/Loading";
 
-const API_BASE_URL = "https://www.farishtey.in/api/";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const SuperAdminApprovalDashboard = () => {
   const navigate = useNavigate();
@@ -37,8 +37,8 @@ const SuperAdminApprovalDashboard = () => {
       ]);
       setTrainers(trainerRes.data || []);
       setInstitutes(instituteRes.data || []);
-    } catch (err) {
-      console.error("Failed to fetch data", err);
+    } catch {
+      // Failed to fetch data
     } finally {
       setLoading(false);
     }
@@ -49,8 +49,8 @@ const SuperAdminApprovalDashboard = () => {
       await axios.post(`${API_BASE_URL}/approve-trainer`, { trainer_id: id });
       showSuccess("Trainer approved successfully");
       fetchData();
-    } catch (err) {
-      console.error("Approve trainer failed", err);
+    } catch {
+      // Approve trainer failed
     }
   };
 
@@ -59,8 +59,8 @@ const SuperAdminApprovalDashboard = () => {
       await axios.put(`${API_BASE_URL}/trainer/${id}`, { status: "rejected" });
       showError("Trainer rejected");
       fetchData();
-    } catch (err) {
-      console.error("Reject trainer failed", err);
+    } catch {
+      // Reject trainer failed
     }
   };
 
@@ -71,8 +71,8 @@ const SuperAdminApprovalDashboard = () => {
       });
       showSuccess("Institute approved successfully");
       fetchData();
-    } catch (err) {
-      console.error("Approve institute failed", err);
+    } catch {
+      // Approve institute failed
     }
   };
 
@@ -81,8 +81,8 @@ const SuperAdminApprovalDashboard = () => {
       await axios.put(`${API_BASE_URL}/institute/${id}`, { status: "rejected" });
       showError("Institute rejected");
       fetchData();
-    } catch (err) {
-      console.error("Reject institute failed", err);
+    } catch {
+      // Reject institute failed
     }
   };
 

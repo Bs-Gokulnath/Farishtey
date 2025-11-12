@@ -5,7 +5,7 @@ import Alert from "../components/Alert";
 import useAlert from "../components/useAlert";
 import Loading, { ButtonLoading, CardLoading } from "../components/Loading";
 
-const API_BASE_URL = "https://www.farishtey.in/api/";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const RegisterCertificate = () => {
   const { alert, showSuccess, showError, hideAlert } = useAlert();
@@ -45,20 +45,24 @@ const RegisterCertificate = () => {
       const response = await axios.get(`${API_BASE_URL}sessions`);
       const sessions = response.data || [];
       
-      // Filter sessions: approved but not completed, and match city
-      const filteredSessions = sessions.filter(session => 
-        session.allotment_status === "approved" && 
-        session.venue && 
-        session.venue.toLowerCase().includes(city.toLowerCase())
-      );
+      // Get chapter code from city name (first 3 characters, uppercase)
+      const chapterCode = city.substring(0, 3).toUpperCase();
+      
+      // Filter sessions: approved but not completed, and match chapter code in booking_id
+      const filteredSessions = sessions.filter(session => {
+        const bookingId = session.booking_id || '';
+        const sessionChapterCode = bookingId.substring(0, 3).toUpperCase();
+        
+        return session.allotment_status === "approved" && 
+               sessionChapterCode === chapterCode;
+      });
       
       setAvailableSessions(filteredSessions);
       
       if (filteredSessions.length === 0) {
-        showError("No incomplete sessions found for the selected city.");
+        showError("No incomplete sessions found for the selected chapter.");
       }
-    } catch (error) {
-      console.error("Failed to fetch sessions:", error);
+    } catch {
       showError("Failed to load sessions. Please try again.");
     } finally {
       setSessionsLoading(false);
@@ -148,8 +152,6 @@ const RegisterCertificate = () => {
         }
       });
       
-      console.log("Sending participant data:", participantData);
-      
       await axios.post(`${API_BASE_URL}/add-participant`, participantData);
       
       showSuccess("🎉 Certificate registration successful!");
@@ -167,8 +169,7 @@ const RegisterCertificate = () => {
         phone: "",
         email: ""
       });
-    } catch (error) {
-      console.error("Registration failed:", error);
+    } catch {
       showError("Registration failed. Please try again.");
     } finally {
       setLoading(false);
@@ -295,7 +296,7 @@ const RegisterCertificate = () => {
                     </svg>
                   </div>
                   <h3 className="text-lg font-medium text-gray-800 mb-2">No Sessions Available</h3>
-                  <p className="text-gray-600">No incomplete sessions found for {selectedCity}. Please select a different city.</p>
+                  <p className="text-gray-600">No incomplete sessions found for {selectedCity} chapter. Please select a different city.</p>
                 </div>
               ) : (
                 <div className="grid gap-4">

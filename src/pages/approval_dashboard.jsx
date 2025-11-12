@@ -7,7 +7,7 @@ import useAlert from "../components/useAlert";
 import CompleteSessionPopup from "../components/Complete_Button";
 import Loading, { ButtonLoading, TableRowLoading } from "../components/Loading";
 
-const API_BASE_URL = "https://www.farishtey.in/api/";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const AdminApprovalDashboard = () => {
   const navigate = useNavigate();
@@ -49,13 +49,10 @@ const AdminApprovalDashboard = () => {
     if (storedUser) {
       try {
         const userData = JSON.parse(storedUser);
-        console.log("User data loaded:", userData);
-        console.log("User role:", userData.role);
-        console.log("User chapter:", userData.chapter);
         setUserRole(userData.role || "");
         setUserChapter(userData.chapter || "");
-      } catch (e) {
-        console.error("Error parsing user data:", e);
+      } catch {
+        // Error parsing user data
       }
     }
   }, []);
@@ -66,8 +63,7 @@ const AdminApprovalDashboard = () => {
       const response = await axios.get(`${API_BASE_URL}sessions`);
       const sortedRequests = sortSessions(response.data || []);
       setRequests(sortedRequests);
-    } catch (error) {
-      console.error("Failed to fetch sessions", error);
+    } catch {
       setError("Failed to fetch sessions.");
     } finally {
       setLoading(false);
@@ -92,29 +88,20 @@ const AdminApprovalDashboard = () => {
   const filterSessionsByChapter = (sessions) => {
     // If user role is ROLE_DEFAULT, filter by user's chapter code in booking_id
     if (userRole === "ROLE_DEFAULT" && userChapter) {
-      console.log("Filtering sessions for ROLE_DEFAULT user");
-      console.log("User Chapter:", userChapter);
-      console.log("Total sessions before filter:", sessions.length);
-      
       // Get chapter code from chapter name (e.g., "Erode" -> "ERO")
       const chapterCode = userChapter.substring(0, 3).toUpperCase();
-      console.log("Chapter Code:", chapterCode);
       
       const filteredSessions = sessions.filter((session) => {
         const bookingId = session.booking_id || "";
-        console.log(`Session ${session.session_id} booking_id:`, bookingId);
         // Check if booking_id starts with the chapter code
         const matchesChapter = bookingId.toUpperCase().startsWith(chapterCode);
-        console.log(`Matches chapter (${chapterCode}):`, matchesChapter);
         return matchesChapter;
       });
-      console.log("Filtered sessions count:", filteredSessions.length);
       return filteredSessions;
     }
     
     // For admin, apply chapter filter if selected (full chapter name)
     if (userRole === "admin" && selectedChapterFilter !== "all") {
-      console.log("Filtering sessions for admin by chapter:", selectedChapterFilter);
       // Get chapter code from full chapter name (first 3 letters)
       const chapterCode = selectedChapterFilter.substring(0, 3).toUpperCase();
       return sessions.filter((session) => {
@@ -124,7 +111,6 @@ const AdminApprovalDashboard = () => {
     }
     
     // For admin or other roles, return all sessions
-    console.log("Showing all sessions for admin/other roles");
     return sessions;
   };
 
@@ -136,8 +122,8 @@ const AdminApprovalDashboard = () => {
         .filter((t) => t.status === "approved" || t.status === "active")
         .map((t) => t.name);
       setTrainersList(approvedTrainers);
-    } catch (error) {
-      console.error("Failed to fetch trainers", error);
+    } catch {
+      // Failed to fetch trainers
     } finally {
       setTrainersLoading(false);
     }
@@ -151,8 +137,8 @@ const AdminApprovalDashboard = () => {
         .filter((i) => i.status === "approved" || i.status === "active")
         .map((i) => i.name);
       setInstitutesList(approvedInstitutes);
-    } catch (error) {
-      console.error("Failed to fetch institutes", error);
+    } catch {
+      // Failed to fetch institutes
     } finally {
       setInstitutesLoading(false);
     }
@@ -167,8 +153,8 @@ const AdminApprovalDashboard = () => {
       ]);
       setPendingTrainers(trainerRes.data || []);
       setPendingInstitutes(instituteRes.data || []);
-    } catch (err) {
-      console.error("Failed to fetch pending data", err);
+    } catch {
+      // Failed to fetch pending data
     } finally {
       setApprovalLoading(false);
     }
@@ -196,8 +182,8 @@ const AdminApprovalDashboard = () => {
         );
         return sortSessions(updated);
       });
-    } catch (err) {
-      console.error("Error updating session:", err);
+    } catch {
+      // Error updating session
     }
   };
 
@@ -215,8 +201,8 @@ const AdminApprovalDashboard = () => {
       });
       showSuccess(" Session approved successfully!");
       await fetchSessions();
-    } catch (err) {
-      console.error("Approval failed:", err);
+    } catch {
+      // Approval failed
     }
   };
 
@@ -239,8 +225,7 @@ const AdminApprovalDashboard = () => {
       
       // Refresh data from backend to get the updated status
       await fetchSessions();
-    } catch (error) {
-      console.error("Error refreshing sessions:", error);
+    } catch {
       showError("Failed to refresh session list. Please refresh the page.");
     }
   };
@@ -272,8 +257,7 @@ const AdminApprovalDashboard = () => {
       
       // Refresh data from backend to ensure consistency
       await fetchSessions();
-    } catch (err) {
-      console.error("Reject session failed:", err);
+    } catch {
       showError("Failed to reject session. Please try again.");
     }
   };
@@ -284,8 +268,8 @@ const AdminApprovalDashboard = () => {
       showSuccess(" Trainer approved successfully");
       fetchPendingData();
       fetchTrainers();
-    } catch (err) {
-      console.error("Approve trainer failed", err);
+    } catch {
+      // Approve trainer failed
     }
   };
 
@@ -306,8 +290,7 @@ const AdminApprovalDashboard = () => {
       
       // Refresh data from backend to ensure consistency
       await fetchPendingData();
-    } catch (err) {
-      console.error("Reject trainer failed", err);
+    } catch {
       showError("Failed to reject trainer. Please try again.");
     }
   };
@@ -320,8 +303,8 @@ const AdminApprovalDashboard = () => {
       showSuccess(" Institute approved successfully");
       fetchPendingData();
       fetchInstitutes();
-    } catch (err) {
-      console.error("Approve institute failed", err);
+    } catch {
+      // Approve institute failed
     }
   };
 
@@ -342,8 +325,7 @@ const AdminApprovalDashboard = () => {
       
       // Refresh data from backend to ensure consistency
       await fetchPendingData();
-    } catch (err) {
-      console.error("Reject institute failed", err);
+    } catch {
       showError("Failed to reject institute. Please try again.");
     }
   };

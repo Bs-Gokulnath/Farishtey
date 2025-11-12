@@ -122,7 +122,6 @@ function Header({ hideAuthLinks, isHomepage, showHomeOnQuestions }) {
           <a
             href="https://youngindians.net/"
             className="cursor-pointer"
-            onClick={() => console.log("Yi Logo clicked")}
           >
             <img
               src="/assets/Yi.png"

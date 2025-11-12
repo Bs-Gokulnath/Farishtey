@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import Alert from "../components/Alert";
 import useAlert from "../components/useAlert";
 
-const API_BASE_URL = "https://www.farishtey.in/api/";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const AddNewTrainer = () => {
   const navigate = useNavigate();
@@ -26,18 +26,15 @@ const AddNewTrainer = () => {
     const fetchInstitutes = async () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/institutes`);
-        console.log("Institutes response:", res.data); // Debug log
         if (res.data && Array.isArray(res.data)) {
           const approvedInstitutes = res.data
             .filter((i) => i.status === "approved" || i.status === "active")
             .map((i) => i.name);
           setInstitutesList(approvedInstitutes);
         } else {
-          console.error("Invalid institutes data format:", res.data);
           setInstitutesList([]);
         }
-      } catch (error) {
-        console.error("Failed to fetch institutes", error);
+      } catch {
         setInstitutesList([]);
       }
     };
@@ -88,10 +85,8 @@ const AddNewTrainer = () => {
       // Navigate back to approval dashboard
       navigate("/approval");
     } catch (err) {
-      console.error("Failed to add trainer", err);
       if (err.response) {
         // Server responded with error status
-        console.error("Error response:", err.response.data);
         // Handle specific error cases
         if (err.response.data.detail === 'Trainer with this email already exists') {
           showError("A trainer with this email already exists. Please use a different email address.");
