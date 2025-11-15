@@ -82,7 +82,7 @@ function Header({ hideAuthLinks, isHomepage, showHomeOnQuestions }) {
       if (!isHomepage) {
         sessionLinks.push(
           <Link key="home" to="/" className="text-blue-600 font-semibold hover:underline">
-            {/* Home */}
+            Home
           </Link>
         );
       }

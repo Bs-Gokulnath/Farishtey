@@ -15,7 +15,7 @@ const MyTrainingRequests = () => {
   useEffect(() => {
     const fetchMyRequests = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}sessions?email=${userEmail}`);
+        const res = await axios.get(`${API_BASE_URL}/sessions?email=${userEmail}`);
         const reversed = (res.data || []).reverse();
         setRequests(reversed);
       } catch {

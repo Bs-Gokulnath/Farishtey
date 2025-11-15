@@ -36,16 +36,17 @@ const FarishteyDash = () => {
           </Link>
 
           {/* 3. Farishtey Videos */}
-          <Link to="/farishtey-videos">
-            <div className="flex flex-col items-center cursor-pointer hover:scale-105 transition-transform">
-              <img
-                src="/assets/farishtey-videos.png"
-                alt="Farishtey Videos"
-                className="w-40 h-auto hover:opacity-80 transition-opacity"
-              />
-              <p className="mt-2 text-lg font-semibold text-gray-800">Farishtey Videos</p>
-            </div>
-          </Link>
+          <div 
+            onClick={() => alert("Coming Soon!")}
+            className="flex flex-col items-center cursor-pointer hover:scale-105 transition-transform"
+          >
+            <img
+              src="/assets/farishtey-videos.png"
+              alt="Farishtey Videos"
+              className="w-40 h-auto hover:opacity-80 transition-opacity"
+            />
+            <p className="mt-2 text-lg font-semibold text-gray-800">Farishtey Videos</p>
+          </div>
 
         </div>
       </div>

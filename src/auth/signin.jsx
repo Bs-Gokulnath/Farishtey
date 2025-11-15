@@ -195,7 +195,7 @@ const Signin = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 text-white font-semibold rounded-lg hover:from-purple-700 hover:via-purple-800 hover:to-purple-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-purple-700 text-white font-semibold rounded-lg hover:bg-purple-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <ButtonLoading />

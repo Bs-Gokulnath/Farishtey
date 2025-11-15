@@ -42,25 +42,29 @@ const RegisterCertificate = () => {
   const fetchSessionsForCity = async (city) => {
     setSessionsLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}sessions`);
+      const response = await axios.get(`${API_BASE_URL}/sessions`);
       const sessions = response.data || [];
       
       // Get chapter code from city name (first 3 characters, uppercase)
       const chapterCode = city.substring(0, 3).toUpperCase();
       
-      // Filter sessions: approved but not completed, and match chapter code in booking_id
+      // Filter sessions: approved (regardless of completion status), and match chapter code in booking_id or chapter field
       const filteredSessions = sessions.filter(session => {
         const bookingId = session.booking_id || '';
         const sessionChapterCode = bookingId.substring(0, 3).toUpperCase();
+        const sessionChapter = session.chapter || '';
         
-        return session.allotment_status === "approved" && 
-               sessionChapterCode === chapterCode;
+        // Match either by booking_id prefix or by chapter name
+        const matchesChapter = sessionChapterCode === chapterCode || 
+                              sessionChapter.toLowerCase() === city.toLowerCase();
+        
+        return session.allotment_status === "approved" && matchesChapter;
       });
       
       setAvailableSessions(filteredSessions);
       
       if (filteredSessions.length === 0) {
-        showError("No incomplete sessions found for the selected chapter.");
+        showError("No approved sessions found for the selected chapter.");
       }
     } catch {
       showError("Failed to load sessions. Please try again.");
@@ -296,7 +300,7 @@ const RegisterCertificate = () => {
                     </svg>
                   </div>
                   <h3 className="text-lg font-medium text-gray-800 mb-2">No Sessions Available</h3>
-                  <p className="text-gray-600">No incomplete sessions found for {selectedCity} chapter. Please select a different city.</p>
+                  <p className="text-gray-600">No approved sessions found for {selectedCity} chapter. Please select a different city.</p>
                 </div>
               ) : (
                 <div className="grid gap-4">

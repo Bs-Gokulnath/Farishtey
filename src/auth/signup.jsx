@@ -97,7 +97,7 @@ const Signup = () => {
       >
         <div className="absolute inset-0 bg-white" />
         {/* Decorative background shapes */}
-        <div className="absolute w-72 h-72 bg-indigo-300/20 rounded-full blur-2xl right-[-80px] bottom-[-90px]" />
+        <div className="absolute w-72 h-72 rounded-full blur-2xl right-[-80px] bottom-[-90px]" />
       </div>
 
       <Header />
@@ -177,7 +177,7 @@ const Signup = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 mt-2 bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 text-white font-semibold rounded-lg hover:bg-gradient-to-br hover:from-blue-700 hover:to-cyan-500 shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 mt-2 bg-purple-700 text-white font-semibold rounded-lg hover:bg-purple-800 shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? <ButtonLoading /> : "Sign Up"}
           </button>

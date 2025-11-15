@@ -14,6 +14,7 @@ import FarishteyDash from './pages/farishtey_dash';
 import AddNewTrainer from './pages/add_train';
 import AddNewInstitute from './pages/add_inst';
 import RegisterCertificate from './pages/regis_cert';
+import ViewOfflineData from './pages/view_offline_data';
 
 
 // function App(){
@@ -102,6 +103,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['admin','ROLE_DEFAULT']}>
                 <AddNewInstitute />
+              </ProtectedRoute>
+            }
+          />
+          <Route 
+            path="/view-offline-data" 
+            element={
+              <ProtectedRoute allowedRoles={['admin','ROLE_DEFAULT']}>
+                <ViewOfflineData />
               </ProtectedRoute>
             }
           />
